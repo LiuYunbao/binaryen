@@ -368,7 +368,7 @@ public:
   Asm2WasmPreProcessor& preprocessor;
   bool debug;
     
-  FloatTrap::Mode trapMode;
+  TrapMode trapMode;
   PassOptions passOptions;
   bool legalizeJavaScriptFFI;
   bool runOptimizationPasses;
@@ -485,7 +485,7 @@ private:
   }
 
 public:
- Asm2WasmBuilder(Module& wasm, Asm2WasmPreProcessor& preprocessor, bool debug, FloatTrap::Mode trapMode, PassOptions passOptions, bool legalizeJavaScriptFFI, bool runOptimizationPasses, bool wasmOnly)
+ Asm2WasmBuilder(Module& wasm, Asm2WasmPreProcessor& preprocessor, bool debug, TrapMode trapMode, PassOptions passOptions, bool legalizeJavaScriptFFI, bool runOptimizationPasses, bool wasmOnly)
      : wasm(wasm),
        allocator(wasm.allocator),
        builder(wasm),
@@ -1213,7 +1213,11 @@ void Asm2WasmBuilder::processAsm(Ref ast) {
   // finalizeCalls also does autoDrop, which is crucial for the non-optimizing case,
   // so that the output of the first pass is valid
   passRunner.add<FinalizeCalls>(this);
-  passRunner.add<FloatTrap>(trapMode);
+  if (trapMode == TrapMode::Clamp) {
+    passRunner.add("trap-mode-clamp");
+  } else if (trapMode == TrapMode::JS) {
+    passRunner.add("trap-mode-js");
+  }
   if (legalizeJavaScriptFFI) {
     passRunner.add("legalize-js-interface");
   }
